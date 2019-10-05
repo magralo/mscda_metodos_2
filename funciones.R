@@ -124,8 +124,12 @@ simulacion_experimento=function(seed,k,n,prices,total_budget,sigma,signal2noise)
   sel_ada_lasso=ada_lasso(X,y)
   sel_bic=bma.bic(X,y)
   sel_nl=bma.nl(X,y)
-  sel_lasso_mod=lasso_prop(X,y,prices)
-  sel_ada_mod=ada_lasso_prop(X,y,prices) #ada lasso modificado
+  sel_lasso_mod10000=lasso_prop(X,y,prices,costo_error=10000)
+  sel_lasso_mod200=lasso_prop(X,y,prices,costo_error=200)
+  sel_lasso_mod100=lasso_prop(X,y,prices,costo_error=100)
+  sel_lasso_mod50=lasso_prop(X,y,prices,costo_error=50)
+  
+  
   
   price_lasso=sum(prices[sel_lasso])
   n_lasso=floor(total_budget/price_lasso)
@@ -139,11 +143,18 @@ simulacion_experimento=function(seed,k,n,prices,total_budget,sigma,signal2noise)
   price_nl=sum(prices[sel_nl])
   n_nl=floor(total_budget/price_nl)
   
-  price_ada_mod=sum(prices[sel_ada_mod])
-  n_ada_mod=floor(total_budget/price_ada_mod)
   
-  price_lasso_mod=sum(prices[sel_lasso_mod])
-  n_lasso_mod=floor(total_budget/price_lasso_mod)
+  price_lasso_mod10000=sum(prices[sel_lasso_mod10000])
+  n_lasso_mod10000=floor(total_budget/price_lasso_mod10000)
+  
+  price_lasso_mod200=sum(prices[sel_lasso_mod200])
+  n_lasso_mod200=floor(total_budget/price_lasso_mod200)
+  
+  price_lasso_mod100=sum(prices[sel_lasso_mod100])
+  n_lasso_mod100=floor(total_budget/price_lasso_mod100)
+  
+  price_lasso_mod50=sum(prices[sel_lasso_mod50])
+  n_lasso_mod50=floor(total_budget/price_lasso_mod50)
   
   
   sel_naive=rep(TRUE,length(prices))
@@ -153,7 +164,9 @@ simulacion_experimento=function(seed,k,n,prices,total_budget,sigma,signal2noise)
   price_oracle=sum(prices[simulacion$oracle])
   n_oracle=floor(total_budget/price_oracle)
   
-  nn=c(n_lasso,n_ada_lasso,n_bic,n_nl,n_ada_mod,n_lasso_mod,n_naive,n_oracle)
+  nn=c(n_lasso,n_ada_lasso,n_bic,n_nl,n_lasso_mod10000,
+       n_lasso_mod200,n_lasso_mod100,n_lasso_mod50,
+       n_naive,n_oracle)
   
   new_data=get_new_X_y(simulacion$alpha_oracle,
                        simulacion$beta_oracle,
@@ -184,9 +197,13 @@ simulacion_experimento=function(seed,k,n,prices,total_budget,sigma,signal2noise)
   
   mse_bic=get_mse(X,y,new_X,new_y,test_X,test_y,n_bic,sel_bic)
   
-  mse_ada_mod=get_mse(X,y,new_X,new_y,test_X,test_y,n_ada_mod,sel_ada_mod)
+  mse_lasso_mod10000=get_mse(X,y,new_X,new_y,test_X,test_y,n_lasso_mod10000,sel_lasso_mod10000)
+
+  mse_lasso_mod200=get_mse(X,y,new_X,new_y,test_X,test_y,n_lasso_mod200,sel_lasso_mod200)
   
-  mse_lasso_mod=get_mse(X,y,new_X,new_y,test_X,test_y,n_lasso_mod,sel_lasso_mod)
+  mse_lasso_mod100=get_mse(X,y,new_X,new_y,test_X,test_y,n_lasso_mod100,sel_lasso_mod100)
+  
+  mse_lasso_mod50=get_mse(X,y,new_X,new_y,test_X,test_y,n_lasso_mod50,sel_lasso_mod50)
   
   mse_naive=get_mse(X,y,new_X,new_y,test_X,test_y,n_naive,sel_naive)
   
@@ -196,14 +213,23 @@ simulacion_experimento=function(seed,k,n,prices,total_budget,sigma,signal2noise)
   acu_ada_lasso=mean(sel_ada_lasso==simulacion$oracle)
   acu_bic=mean(sel_bic==simulacion$oracle)
   acu_nl=mean(sel_nl==simulacion$oracle)
-  acu_ada_mod=mean(sel_ada_mod==simulacion$oracle)
-  acu_lasso_mod=mean(sel_lasso_mod==simulacion$oracle)
+ 
+  acu_lasso_mod10000=mean(sel_lasso_mod10000==simulacion$oracle)
+  acu_lasso_mod200=mean(sel_lasso_mod200==simulacion$oracle)
+  acu_lasso_mod100=mean(sel_lasso_mod100==simulacion$oracle)
+  acu_lasso_mod50=mean(sel_lasso_mod50==simulacion$oracle)
   acu_naive=mean(sel_naive==simulacion$oracle)
   acu_oracle=1
   
-  resultado=data.frame(metodologia=c('Lasso','Ada Lasso','Local prior','Non local','Ada mod','Lasso mod','Naive','Oracle'),
-                       mse=c(mse_lasso,mse_ada_lasso,mse_bic,mse_nl,mse_ada_mod,mse_lasso_mod,mse_naive,mse_oracle),
-                       accuracy=c(acu_lasso,acu_ada_lasso,acu_bic,acu_nl,acu_ada_mod,acu_lasso_mod,acu_naive,acu_oracle),
+  resultado=data.frame(metodologia=c('Lasso','Ada Lasso','Local prior','Non local',
+                                     'Lasso mod 10000','Lasso mod 200','Lasso mod 100','Lasso mod 50',
+                                     'Naive','Oracle'),
+                       mse=c(mse_lasso,mse_ada_lasso,mse_bic,mse_nl,
+                             mse_lasso_mod10000,mse_lasso_mod200,mse_lasso_mod100,mse_lasso_mod50,
+                             mse_naive,mse_oracle),
+                       accuracy=c(acu_lasso,acu_ada_lasso,acu_bic,acu_nl,
+                                  acu_lasso_mod10000,acu_lasso_mod200,acu_lasso_mod100,
+                                  acu_lasso_mod50,acu_naive,acu_oracle),
                        n=nn
   )%>%
     mutate(seed=seed)
