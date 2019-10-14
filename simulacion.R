@@ -26,7 +26,7 @@ signal2noise=signif(signal2noise,2)
 folder=paste0('noise',signal2noise)
 dir.create(file.path( folder), showWarnings = FALSE)
 total_budget=sum(prices)*n
-semillas=as.list(1:1000)
+semillas=as.list(1:200)
 
 
 nc=detectCores()

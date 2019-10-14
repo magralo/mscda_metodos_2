@@ -1,7 +1,7 @@
 library(tidyverse)
 library(ggthemes)
-k=10
-noise=1
+k=5
+noise=0.43
 #file=paste0('costo operacion = 0/noise',noise,'/resultados_',k,'.csv')
 file=paste0('noise',noise,'/resultados_',k,'.csv')
 resultados_org=read.csv(file)

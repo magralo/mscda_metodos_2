@@ -59,6 +59,12 @@ simple_lasso=function(X,y){#retornamos cuales variables elejimos dado un X y un 
   cv <- cv.glmnet(X, y, alpha = 1)
   model <- glmnet(X, y, alpha = 1, lambda = cv$lambda.min)
   selected=as.numeric(model$beta)!=0
+  for (i in 1:4){
+    cv <- cv.glmnet(X, y, alpha = 1)
+    model <- glmnet(X, y, alpha = 1, lambda = cv$lambda.min)
+    selected=selected+(as.numeric(model$beta)!=0)
+  }
+  selected=selected>=3
   return(selected)
 }
 ##ADALASSO
@@ -88,7 +94,7 @@ bma.nl=function(X,y){#retornamos cuales variables elejimos dado un X y un Y
   priorCoef <- momprior(tau=0.1)#idk how to choose this tau
   priorDelta <- modelbbprior(alpha.p=1,beta.p=1)
   priorVar <- igprior(alpha=.01,lambda=.01)
-  NLObject<- modelSelection(y=y, x=X, center=FALSE, scale=FALSE, niter=500, priorCoef=priorCoef, priorDelta=priorDelta, priorVar=priorVar,method='Laplace')
+  NLObject<- modelSelection(y=y, x=X, center=FALSE, scale=FALSE, niter=10, priorCoef=priorCoef, priorDelta=priorDelta, priorVar=priorVar,method='Laplace')
   buenas=NLObject$postMode
   return(as.numeric(buenas)==1)
 }
@@ -104,11 +110,31 @@ ada_lasso_prop=function(X,y,prices){#retornamos cuales variables elejimos dado u
 ## LASSO2
 source('adaLasso_wprice.R')
 lasso_prop=function(X,y,prices,costo_error=100){#retornamos cuales variables elejimos dado un X y un Y
-  cvfit = cv.glmnet(X, y,penalty.factor = prices,type.measure="mae")
-  costo_modelo=c(0,prices)%*%as.matrix(coef(cvfit,s=cvfit$lambda)!=0)
-  cv_realfo=cvfit$cvm*costo_error+costo_modelo
-  lambda_optimo=cvfit$lambda[which.min(cv_realfo)]
-  selected=as.numeric(coef(cvfit, s = lambda_optimo)[-1])!=0
+  if(costo_error!=Inf){
+    cvfit = cv.glmnet(X, y,penalty.factor = prices)
+    costo_modelo=c(0,prices)%*%as.matrix(coef(cvfit,s=cvfit$lambda)!=0)
+    cv_realfo=sqrt(cvfit$cvm)*costo_error+costo_modelo
+    lambda_optimo=cvfit$lambda[which.min(cv_realfo)]
+    selected=as.numeric(coef(cvfit, s = lambda_optimo)[-1])!=0
+    for (i in 1:4){
+      cvfit = cv.glmnet(X, y,penalty.factor = prices)
+      costo_modelo=c(0,prices)%*%as.matrix(coef(cvfit,s=cvfit$lambda)!=0)
+      cv_realfo=sqrt(cvfit$cvm)*costo_error+costo_modelo
+      lambda_optimo=cvfit$lambda[which.min(cv_realfo)]
+      selected=selected+(as.numeric(coef(cvfit, s = lambda_optimo)[-1])!=0)
+    }
+    
+  }else{
+    cvfit = cv.glmnet(X, y,penalty.factor = prices)
+    selected=as.numeric(coef(cvfit, s = cvfit$lambda.min)[-1])!=0
+    
+    for (i in 1:4){
+      cvfit = cv.glmnet(X, y,penalty.factor = prices)
+      selected=selected+(as.numeric(coef(cvfit, s = cvfit$lambda.min)[-1])!=0)
+      
+    }
+  }
+  selected=selected>=3
   return(selected)
 }
 
@@ -127,7 +153,7 @@ simulacion_experimento=function(seed,k,n,prices,total_budget,sigma,signal2noise)
   sel_lasso_mod10000=lasso_prop(X,y,prices,costo_error=10000)
   sel_lasso_mod200=lasso_prop(X,y,prices,costo_error=200)
   sel_lasso_mod100=lasso_prop(X,y,prices,costo_error=100)
-  sel_lasso_mod50=lasso_prop(X,y,prices,costo_error=50)
+  sel_lasso_mod50=lasso_prop(X,y,prices,costo_error=Inf)
   
   
   
